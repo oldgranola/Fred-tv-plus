@@ -1,6 +1,7 @@
 # Fred TV Plus custom modification of Fred TV https://github.com/fredolx/open-tv (Formerly Open TV)
 # Added custom list creation in addition to 'favorites' onto Fred TV for experimental purposes and self use
 Note: Custom list creation feature addition is not on the AUR or Flathub version maintained by Freodolx
+Note: The rest below is from the original repo author fredolx at the url above.
 
 Completely rewritten to accommodate new features and to be even speedier, Fred TV has been carefully crafted to deliver the best IPTV experience.
 
