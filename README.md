@@ -1,4 +1,5 @@
-# Fred TV (Formerly Open TV)
+# Fred TV Plus custom modification of Fred TV https://github.com/fredolx/open-tv (Formerly Open TV)
+# Added custom list creation in addition to 'favorites' onto Fred TV for experimental purposes and self use
 
 Completely rewritten to accommodate new features and to be even speedier, Fred TV has been carefully crafted to deliver the best IPTV experience.
 
@@ -86,7 +87,7 @@ docker run --rm -it \
 
 
 ## Feedback
-Feel free to submit any kind of feedback by creating a new issue.
+Feel free to submit any kind of feedback by creating a new issue at the currend fred-tv maintainer's git https://github.com/fredolx/open-tv
 
 ## Hotkeys
 * F1: Help
