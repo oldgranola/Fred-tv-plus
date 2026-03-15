@@ -2,7 +2,7 @@
 
 ## Feature: Custom Playlists
 **Date:** March 2026  
-**Author:** John (with AI assistance from Claude, Anthropic)
+**Author:** oldgraola (with AI assistance from Claude, Anthropic)
 
 ### What was added
 
