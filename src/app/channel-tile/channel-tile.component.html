@@ -58,5 +58,23 @@
       Re-stream
     </button>
     <button [hidden]="!isCustom()" mat-menu-item (click)="delete()">Delete</button>
+    <!-- Playlists submenu -->
+    <button
+      [hidden]="channel?.media_type == mediaTypeEnum.group || channel?.media_type == mediaTypeEnum.season || viewMode == viewModeEnum.History"
+      mat-menu-item
+      [matMenuTriggerFor]="playlistSubMenu">
+      Playlists
+    </button>
+  </ng-template>
+</mat-menu>
+
+<mat-menu #playlistSubMenu="matMenu">
+  <ng-container *ngIf="playlists.length > 0; else noPlaylists">
+    <button mat-menu-item *ngFor="let pl of playlists" (click)="togglePlaylist(pl)">
+      <span>{{ isInPlaylist(pl.id!) ? '✓ ' : '' }}{{ pl.name }}</span>
+    </button>
+  </ng-container>
+  <ng-template #noPlaylists>
+    <button mat-menu-item disabled>No playlists — create one in the Playlists menu</button>
   </ng-template>
 </mat-menu>

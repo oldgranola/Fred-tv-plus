@@ -97,6 +97,7 @@ pub struct Filters {
     pub use_keywords: bool,
     pub sort: u8,
     pub season: Option<i64>,
+    pub playlist_id: Option<i64>,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize, Default)]
@@ -189,6 +190,13 @@ pub struct NetworkInfo {
     pub port: u16,
     pub local_ips: Vec<String>,
     pub wan_ip: String,
+}
+
+#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
+pub struct Playlist {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<i64>,
+    pub name: String,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]

@@ -4,7 +4,7 @@ use crate::log::log;
 use crate::sort_type;
 use crate::types::{
     ChannelPreserve, CustomChannel, CustomChannelExtraData, EPGNotify, ExportedGroup, Group,
-    IdName, Season,
+    IdName, Playlist, Season,
 };
 use crate::{
     media_type, source_type,
@@ -231,6 +231,21 @@ fn apply_migrations() -> Result<()> {
             r#"
               ALTER TABLE sources ADD COLUMN last_updated integer;
               ANALYZE;
+            "#,
+        ),
+        M::up(
+            r#"
+              CREATE TABLE IF NOT EXISTS playlists (
+                id INTEGER PRIMARY KEY,
+                name VARCHAR(100) UNIQUE NOT NULL
+              );
+              CREATE TABLE IF NOT EXISTS playlist_channels (
+                playlist_id INTEGER NOT NULL,
+                channel_id  INTEGER NOT NULL,
+                PRIMARY KEY (playlist_id, channel_id),
+                FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE,
+                FOREIGN KEY (channel_id)  REFERENCES channels(id)  ON DELETE CASCADE
+              );
             "#,
         ),
     ]);
@@ -494,6 +509,11 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
         sql_query += "\nAND favorite = 1";
     }
 
+    if filters.playlist_id.is_some() {
+        sql_query += "\nAND id IN (SELECT channel_id FROM playlist_channels WHERE playlist_id = ?)";
+        baked_params += 1;
+    }
+
     if filters.series_id.is_some() {
         sql_query += &format!("\nAND series_id = ?");
         baked_params += 1;
@@ -524,6 +544,9 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
     params.extend(to_to_sql(&keywords));
     params.extend(to_to_sql(&media_types));
     params.extend(to_to_sql(&filters.source_ids));
+    if let Some(ref playlist_id) = filters.playlist_id {
+        params.push(playlist_id);
+    }
     if let Some(ref series_id) = filters.series_id {
         params.push(series_id);
     } else if let Some(ref group) = filters.group_id {
@@ -1823,4 +1846,86 @@ pub fn update_source_last_updated(source_id: i64) -> Result<()> {
         params![chrono::Utc::now().timestamp(), source_id],
     )?;
     Ok(())
+}
+
+// ── Playlist functions ────────────────────────────────────────────────────────
+
+pub fn get_playlists() -> Result<Vec<Playlist>> {
+    let sql = get_conn()?;
+    let playlists = sql
+        .prepare("SELECT id, name FROM playlists ORDER BY name")?
+        .query_map([], |row| {
+            Ok(Playlist {
+                id: row.get("id")?,
+                name: row.get("name")?,
+            })
+        })?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(playlists)
+}
+
+pub fn create_playlist(name: String) -> Result<Playlist> {
+    let sql = get_conn()?;
+    sql.execute(
+        "INSERT INTO playlists (name) VALUES (?)",
+        params![name],
+    )?;
+    let id = sql.last_insert_rowid();
+    Ok(Playlist { id: Some(id), name })
+}
+
+pub fn rename_playlist(id: i64, name: String) -> Result<()> {
+    let sql = get_conn()?;
+    sql.execute(
+        "UPDATE playlists SET name = ? WHERE id = ?",
+        params![name, id],
+    )?;
+    Ok(())
+}
+
+pub fn delete_playlist(id: i64) -> Result<()> {
+    let sql = get_conn()?;
+    sql.execute("DELETE FROM playlists WHERE id = ?", params![id])?;
+    Ok(())
+}
+
+pub fn add_to_playlist(playlist_id: i64, channel_id: i64) -> Result<()> {
+    let sql = get_conn()?;
+    sql.execute(
+        "INSERT OR IGNORE INTO playlist_channels (playlist_id, channel_id) VALUES (?, ?)",
+        params![playlist_id, channel_id],
+    )?;
+    Ok(())
+}
+
+pub fn remove_from_playlist(playlist_id: i64, channel_id: i64) -> Result<()> {
+    let sql = get_conn()?;
+    sql.execute(
+        "DELETE FROM playlist_channels WHERE playlist_id = ? AND channel_id = ?",
+        params![playlist_id, channel_id],
+    )?;
+    Ok(())
+}
+
+pub fn get_channel_playlist_ids(channel_id: i64) -> Result<Vec<i64>> {
+    let sql = get_conn()?;
+    let ids = sql
+        .prepare("SELECT playlist_id FROM playlist_channels WHERE channel_id = ?")?
+        .query_map(params![channel_id], |row| row.get::<_, i64>(0))?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(ids)
+}
+
+pub fn playlist_name_exists(name: &str) -> Result<bool> {
+    let sql = get_conn()?;
+    Ok(sql
+        .query_row(
+            "SELECT 1 FROM playlists WHERE name = ?",
+            params![name],
+            |row| row.get::<_, u8>(0),
+        )
+        .optional()?
+        .is_some())
 }

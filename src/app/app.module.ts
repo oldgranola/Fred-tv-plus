@@ -6,6 +6,7 @@ import { AppComponent } from './app.component';
 import { NgbModalModule, NgbTooltipModule, NgbTypeaheadModule } from '@ng-bootstrap/ng-bootstrap';
 import { FormsModule } from '@angular/forms';
 import { MatMenuModule } from '@angular/material/menu'
+import { MatDividerModule } from '@angular/material/divider'
 import { KeyboardShortcutsModule } from 'ng-keyboard-shortcuts';
 import { ToastrModule } from 'ngx-toastr';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
@@ -70,6 +71,7 @@ import { TimeAgoPipe } from "./pipes/time-ago.pipe";
     ToastrModule.forRoot(),
     KeyboardShortcutsModule.forRoot(),
     MatMenuModule,
+    MatDividerModule,
     NgbModalModule,
     NgbTypeaheadModule
   ],

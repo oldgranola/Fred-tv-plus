@@ -6,7 +6,7 @@ use tauri::{AppHandle, Manager, State};
 use tokio::sync::Mutex;
 use types::{
     AppState, Channel, CustomChannel, CustomChannelExtraData, EPG, EPGNotify, Filters, Group,
-    IdName, NetworkInfo, Settings, Source,
+    IdName, NetworkInfo, Playlist, Settings, Source,
 };
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 use {
@@ -113,6 +113,14 @@ pub fn run() {
             hide_channel,
             hide_group,
             remove_from_history,
+            get_playlists,
+            create_playlist,
+            rename_playlist,
+            delete_playlist,
+            add_to_playlist,
+            remove_from_playlist,
+            get_channel_playlist_ids,
+            playlist_name_exists,
         ])
         .setup(|app| {
             app.manage(Mutex::new(AppState {
@@ -560,4 +568,46 @@ async fn cancel_play(
     mpv::cancel_play(source_id, channel_id.to_string(), state)
         .await
         .map_err(map_err_frontend)
+}
+
+// ── Playlist commands ─────────────────────────────────────────────────────────
+
+#[tauri::command(async)]
+fn get_playlists() -> Result<Vec<Playlist>, String> {
+    sql::get_playlists().map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn create_playlist(name: String) -> Result<Playlist, String> {
+    sql::create_playlist(name).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn rename_playlist(id: i64, name: String) -> Result<(), String> {
+    sql::rename_playlist(id, name).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn delete_playlist(id: i64) -> Result<(), String> {
+    sql::delete_playlist(id).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn add_to_playlist(playlist_id: i64, channel_id: i64) -> Result<(), String> {
+    sql::add_to_playlist(playlist_id, channel_id).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn remove_from_playlist(playlist_id: i64, channel_id: i64) -> Result<(), String> {
+    sql::remove_from_playlist(playlist_id, channel_id).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn get_channel_playlist_ids(channel_id: i64) -> Result<Vec<i64>, String> {
+    sql::get_channel_playlist_ids(channel_id).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn playlist_name_exists(name: String) -> Result<bool, String> {
+    sql::playlist_name_exists(&name).map_err(map_err_frontend)
 }

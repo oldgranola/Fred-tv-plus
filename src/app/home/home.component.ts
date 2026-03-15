@@ -40,6 +40,7 @@ import { isInputFocused } from "../utils";
 import { Node } from "../models/node";
 import { NodeType } from "../models/nodeType";
 import { Stack } from "../models/stack";
+import { Playlist } from "../models/playlist";
 
 import { BulkActionType } from '../models/bulkActionType';
 
@@ -99,6 +100,9 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   loading = false;
   nodeStack: Stack = new Stack();
   showScrollTop = false;
+  playlists: Playlist[] = [];
+  activePlaylistId?: number;
+  newPlaylistName = '';
 
   scrollToTop() {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -170,6 +174,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
             sessionStorage.setItem("refreshedOnStart", "true");
             this.refreshOnStart().then((_) => _);
           }
+          this.loadPlaylists().then((_) => _);
           this.load().then((_) => _);
         }
       })
@@ -177,6 +182,47 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
         this.error.handleError(e);
         this.reset();
       });
+  }
+
+  async loadPlaylists() {
+    this.playlists = await invoke('get_playlists');
+  }
+
+  async switchToPlaylist(playlist: Playlist) {
+    this.activePlaylistId = playlist.id;
+    this.filters!.playlist_id = playlist.id;
+    this.filters!.view_type = this.viewModeEnum.Playlist;
+    this.filters!.series_id = undefined;
+    this.filters!.group_id = undefined;
+    this.filters!.season = undefined;
+    this.clearSearch();
+    this.nodeStack.clear();
+    await this.load();
+  }
+
+  async createPlaylist() {
+    const name = this.newPlaylistName.trim();
+    if (!name) return;
+    const exists: boolean = await invoke('playlist_name_exists', { name });
+    if (exists) {
+      this.toast.error('A playlist with that name already exists');
+      return;
+    }
+    const playlist: Playlist = await invoke('create_playlist', { name });
+    this.playlists = [...this.playlists, playlist].sort((a, b) => a.name.localeCompare(b.name));
+    this.newPlaylistName = '';
+    this.toast.success(`Playlist "${playlist.name}" created`);
+  }
+
+  async deletePlaylist(playlist: Playlist) {
+    await invoke('delete_playlist', { id: playlist.id });
+    this.playlists = this.playlists.filter(p => p.id !== playlist.id);
+    if (this.activePlaylistId === playlist.id) {
+      this.activePlaylistId = undefined;
+      this.filters!.playlist_id = undefined;
+      await this.switchMode(this.viewModeEnum.All);
+    }
+    this.toast.success(`Playlist "${playlist.name}" deleted`);
   }
 
   async refreshOnStart() {
@@ -446,6 +492,8 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     this.filters!.group_id = undefined;
     this.filters!.view_type = viewMode;
     this.filters!.season = undefined;
+    this.filters!.playlist_id = undefined;
+    this.activePlaylistId = undefined;
     this.clearSearch();
     this.nodeStack.clear();
     await this.load();

@@ -69,7 +69,35 @@
         [ngClass]="{ active: filters?.view_type == viewModeEnum.Hidden }">
         Hidden
       </button>
+      <!-- Playlists dropdown -->
+      <button class="btn btn-primary" [matMenuTriggerFor]="playlistMenu"
+        [ngClass]="{ active: filters?.view_type == viewModeEnum.Playlist }">
+        Playlists ▾
+      </button>
     </div>
+
+    <mat-menu #playlistMenu="matMenu">
+      <!-- Create new playlist -->
+      <div class="px-3 py-2 d-flex gap-2" (click)="$event.stopPropagation()">
+        <input class="form-control form-control-sm" placeholder="New playlist name..."
+          [(ngModel)]="newPlaylistName"
+          (keyup.enter)="createPlaylist()" />
+        <button class="btn btn-sm btn-success" (click)="createPlaylist()">+</button>
+      </div>
+      <mat-divider *ngIf="playlists.length > 0"></mat-divider>
+      <!-- Existing playlists -->
+      <ng-container *ngFor="let pl of playlists">
+        <button mat-menu-item (click)="switchToPlaylist(pl)"
+          [class.active-playlist]="activePlaylistId === pl.id">
+          <span style="flex:1">{{ pl.name }}</span>
+          <span class="ms-3 text-danger" style="font-size:0.8em"
+            (click)="$event.stopPropagation(); deletePlaylist(pl)">✕</span>
+        </button>
+      </ng-container>
+      <div *ngIf="playlists.length === 0" class="px-3 py-1 text-muted" style="font-size:0.85em">
+        No playlists yet
+      </div>
+    </mat-menu>
 
     <div class="mx-auto filterBox" style="margin-bottom: 1rem" *ngIf="filtersVisible()" @fadeInOut>
       <div class="form-check form-check-inline form-switch">

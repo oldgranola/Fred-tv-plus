@@ -13,4 +13,5 @@ export class Filters {
   public use_keywords!: boolean;
   public sort?: SortType;
   public season?: number;
+  public playlist_id?: number;
 }

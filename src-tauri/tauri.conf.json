@@ -1,7 +1,7 @@
 {
-  "productName": "Fred TV",
-  "version": "1.9.1",
-  "identifier": "dev.fredol.open-tv",
+  "productName": "Fred TV Plus",
+  "version": "1.9.2",
+  "identifier": "io.github.oldgranola.open-tv",
   "build": {
     "frontendDist": "../dist/open-tv/browser",
     "devUrl": "http://localhost:4200",
@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "Fred TV (v1.9.1)",
+        "title": "Fred TV Plus (v1.9.2)",
         "width": 800,
         "height": 600,
         "resizable": true,

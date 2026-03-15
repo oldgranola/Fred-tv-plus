@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.oldgranola.open-tv</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-2.0</project_license>
+  <name>Fred TV Plus</name>
+  <summary>Fast And Powerful IPTV App</summary>
+  <content_rating type="oars-1.1" />
+  <branding>
+    <color type="primary" scheme_preference="light">#4549cc</color>
+    <color type="primary" scheme_preference="dark">#4549cc</color>
+  </branding>
+  <description>
+    <p>Fred TV Plus is a fork of Fred TV with additional features. A fast and powerful IPTV application built with Tauri and Angular.</p>
+    <ul>
+      <li>Import IPTV channels from any source (M3U File, M3U link, Xtream)</li>
+      <li>Record while watching</li>
+      <li>Multi IPTV sources</li>
+      <li>Control the UI from a TV remote</li>
+      <li>Super low RAM usage and instant search</li>
+      <li>Refresh your sources on demand</li>
+      <li>Add channels to favorites</li>
+    </ul>
+  </description>
+  <categories>
+    <category>AudioVideo</category>
+  </categories>
+  <launchable type="desktop-id">io.github.oldgranola.open-tv.desktop</launchable>
+  <releases>
+    <release version="1.9.2" date="2026-03-13">
+      <description>
+        <p>Fred TV Plus personal fork with additional GUI features.</p>
+      </description>
+    </release>
+  </releases>
+  <developer_name>John (based on Fred TV by Frédéric Lachapelle)</developer_name>
+  <url type="homepage">https://github.com/Fredolx/open-tv</url>
+</component>

@@ -30,6 +30,7 @@ import { getDateFormatted, getExtension, sanitizeFileName } from "../utils";
 import { NodeType, fromMediaType } from "../models/nodeType";
 
 import { ViewMode } from "../models/viewMode";
+import { Playlist } from "../models/playlist";
 
 @Component({
   selector: "app-channel-tile",
@@ -58,6 +59,8 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
   downloading = false;
   mediaTypeEnum = MediaType;
   viewModeEnum = ViewMode;
+  playlists: Playlist[] = [];
+  channelPlaylistIds: number[] = [];
   subscriptions: Subscription[] = [];
   fade = false;
 
@@ -142,12 +145,40 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
     this.alreadyExistsInFav = this.channel!.favorite!;
     this.alreadyHidden = this.channel!.hidden!;
     this.downloading = this.isDownloading();
+    // Load playlists and channel membership for the submenu
+    if (this.channel?.id && this.channel.media_type !== MediaType.group) {
+      invoke<Playlist[]>('get_playlists').then(p => this.playlists = p);
+      invoke<number[]>('get_channel_playlist_ids', { channelId: this.channel.id })
+        .then(ids => this.channelPlaylistIds = ids);
+    }
     event.preventDefault();
     this.menuTopLeftPosition.x = event.clientX;
     this.menuTopLeftPosition.y = event.clientY;
     if (this.memory.currentContextMenu?.menuOpen) this.memory.currentContextMenu.closeMenu();
     this.memory.currentContextMenu = this.matMenuTrigger;
     this.matMenuTrigger.openMenu();
+  }
+
+  isInPlaylist(playlistId: number): boolean {
+    return this.channelPlaylistIds.includes(playlistId);
+  }
+
+  async togglePlaylist(playlist: Playlist) {
+    if (!this.channel?.id) return;
+    const inPlaylist = this.isInPlaylist(playlist.id!);
+    const command = inPlaylist ? 'remove_from_playlist' : 'add_to_playlist';
+    try {
+      await invoke(command, { playlistId: playlist.id, channelId: this.channel.id });
+      if (inPlaylist) {
+        this.channelPlaylistIds = this.channelPlaylistIds.filter(id => id !== playlist.id);
+        this.toastr.success(`Removed from "${playlist.name}"`);
+      } else {
+        this.channelPlaylistIds = [...this.channelPlaylistIds, playlist.id!];
+        this.toastr.success(`Added to "${playlist.name}"`);
+      }
+    } catch (e) {
+      this.error.handleError(e);
+    }
   }
 
   onError(event: Event) {

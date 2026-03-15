@@ -1,0 +1,94 @@
+app-id: io.github.oldgranola.open-tv
+runtime: org.gnome.Platform
+runtime-version: '48'
+sdk: org.gnome.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-nightly
+  - org.freedesktop.Sdk.Extension.node20
+command: open_tv
+
+finish-args:
+  - --share=ipc
+  - --share=network
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --socket=pulseaudio
+  - --device=dri
+  - --filesystem=home
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.freedesktop.Flatpak
+  - --env=WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1
+  - --env=TAURI_SKIP_DEVSERVER_CHECK=true
+
+build-options:
+  append-path: /usr/lib/sdk/rust-nightly/bin:/usr/lib/sdk/node20/bin
+  env:
+    CARGO_HOME: /run/build/open-tv/cargo
+    CARGO_NET_OFFLINE: 'true'
+    npm_config_cache: /run/build/open-tv/npm-cache
+    XDG_CACHE_HOME: /run/build/open-tv/cache
+
+modules:
+  # yt-dlp binary
+  - name: yt-dlp
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 yt-dlp /app/bin/yt-dlp
+    sources:
+      - type: file
+        url: https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp
+        sha256: 52699d7b103803ef37442a52b429f02d4a41b8821fb6ac9c564f7a16056258d3
+        dest-filename: yt-dlp
+
+  # mpv wrapper script - calls the host mpv via flatpak-spawn so all its
+  # libraries are satisfied by whatever environment mpv is installed in
+  - name: mpv-wrapper
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 mpv-wrapper.sh /app/bin/mpv
+    sources:
+      - type: script
+        dest-filename: mpv-wrapper.sh
+        commands:
+          - exec flatpak-spawn --host mpv "$@"
+
+  # ffmpeg wrapper - same approach for ffmpeg
+  - name: ffmpeg-wrapper
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 ffmpeg-wrapper.sh /app/bin/ffmpeg
+    sources:
+      - type: script
+        dest-filename: ffmpeg-wrapper.sh
+        commands:
+          - exec flatpak-spawn --host ffmpeg "$@"
+
+  # Main app
+  - name: open-tv
+    buildsystem: simple
+    build-options:
+      env:
+        CARGO_HOME: /run/build/open-tv/cargo
+        CARGO_NET_OFFLINE: 'true'
+    build-commands:
+      - mkdir -p $CARGO_HOME
+      - cp -r cargo-sources/. $CARGO_HOME/
+      - npm ci --offline --cache ./npm-cache
+      - node_modules/.bin/ng build --configuration=production
+      - node_modules/.bin/tauri build --no-bundle --config '{"build":{"beforeBuildCommand":""}}'
+      - install -Dm755 src-tauri/target/release/open_tv /app/bin/open_tv
+      - install -Dm644 flatpak/open_tv.desktop /app/share/applications/io.github.oldgranola.open-tv.desktop
+      - desktop-file-edit --set-key=Icon --set-value=io.github.oldgranola.open-tv --set-key=Exec --set-value=open_tv /app/share/applications/io.github.oldgranola.open-tv.desktop
+      - install -Dm644 flatpak/io.github.oldgranola.open-tv.metainfo.xml /app/share/metainfo/io.github.oldgranola.open-tv.metainfo.xml
+      - install -Dm644 src-tauri/icons/32x32.png /app/share/icons/hicolor/32x32/apps/io.github.oldgranola.open-tv.png
+      - install -Dm644 src-tauri/icons/128x128.png /app/share/icons/hicolor/128x128/apps/io.github.oldgranola.open-tv.png
+      - install -Dm644 src-tauri/icons/128x128@2x.png /app/share/icons/hicolor/256x256/apps/io.github.oldgranola.open-tv.png
+    sources:
+      - type: dir
+        path: .
+      - type: dir
+        path: flatpak/cargo-sources
+        dest: cargo-sources
+      - type: dir
+        path: flatpak/npm-cache
+        dest: npm-cache
